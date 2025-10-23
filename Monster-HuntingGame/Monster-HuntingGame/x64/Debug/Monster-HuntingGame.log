@@ -1,0 +1,5 @@
+﻿  KeyAndMouse.cpp
+D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\People.h(38,32): warning C4305: “初始化”: 从“double”到“float”截断
+  (编译源文件“KeyAndMouse.cpp”)
+  
+  Monster-HuntingGame.vcxproj -> D:\c++gao\Monster-HuntingGame\x64\Debug\Monster-HuntingGame.exe
