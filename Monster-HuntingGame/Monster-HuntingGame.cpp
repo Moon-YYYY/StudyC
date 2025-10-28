@@ -65,12 +65,13 @@ int main() {
             switch (ST.UI) {
             case 0:
                 textures.setCurrentUI(0);
-                textures.Updata();
+                textures.Updata(MousePosition);
                 textures.draw(win);
                 
                 break;
             case 1:
                 textures.setCurrentUI(1);
+                textures.Updata(MousePosition);
                 textures.draw(win);
                 break;
             case 5:

@@ -23,7 +23,7 @@ void KeyAndMouse::People_Move(Event& event) {
     }
     if (Keyboard::isKeyPressed(Keyboard::A)) {//Ïò×ó
         ST.IsMoving_Left = true;
-        ST.UI = 5;
+        ST.UI = 1;
     }
     if (event.type == Event::KeyReleased) {
         if (event.key.code == Keyboard::A) {

@@ -9,10 +9,12 @@
 using namespace sf;
 using namespace std;
 struct TextureSprite {//设置智能指针自动管理内存，还挺好用~
+	string name;
 	shared_ptr<Sprite>sprite;
 	shared_ptr<Texture>texture;
 };
 struct SpriteConfig {
+	string name;
 	string path;
 	Vector2f PicturePos;
 	Vector2f scale;
@@ -20,11 +22,15 @@ struct SpriteConfig {
 
 struct Change {
 	Vector2f KaiMu_Scale = { 1.1f, 1.1f };
+	Vector2f DaTingButton_Add = { 0.5f, 0.5f };
+	Vector2f DaTingButton_remove = { 0.5f, 0.5f };
 	float speed = 0.01;
+	float ButtonSpeed_Add = 0;
+	float ButtonSpeed_Remove = 0;
 }Cg;
 unordered_map<int, vector<SpriteConfig>> uiconfigs = {
 	{0, {
-		{
+		{"开幕",
 		"picture/开幕.png",
 		Vector2f{820, 470},
 		Vector2f{1.042f,1.042f}
@@ -32,7 +38,8 @@ unordered_map<int, vector<SpriteConfig>> uiconfigs = {
 	}
 	},
 	{ 1, {
-	{"picture/DaTing.png",Vector2f{0, 0},Vector2f{0.586f,0.586f}}
+	{"大厅","picture/DaTing.png",Vector2f{0, 0},Vector2f{0.586f,0.586f}},
+	{"开始游戏","picture/开始游戏按钮.png", Vector2f{1200, 250}, Vector2f{0.5f, 0.5f}}
 	}}
 };
 class LoadTexture {
@@ -47,7 +54,7 @@ public:
 		}
 	
 	}
-	TextureSprite change(TextureSprite& ts){
+	TextureSprite KaiMu_change(TextureSprite& ts){
 		if (ts.sprite->getOrigin() == Vector2f(0, 0)) {
 			ts.sprite->setOrigin(800, 450);
 		}
@@ -64,14 +71,47 @@ public:
 		}
 		return ts;
 	}
-	void Updata() {
+	void DaTingButtonUpdata(Vector2i& MousePosition) {/*
+		cout << MousePosition.x << ' ' << MousePosition.y << endl;*/
+		TextureSprite* ts1 = getSprite("开始游戏");
+		if (ts1->sprite->getOrigin() == Vector2f(0,0)) {
+			ts1->sprite->setOrigin(640, 80);
+		}
+		if (MousePosition.x > 921 && MousePosition.x < 1475 && MousePosition.y > 215 && MousePosition.y < 288 ) {
+			if (Cg.ButtonSpeed_Add < 0.05) {
+				Cg.ButtonSpeed_Add += 0.0001;
+				ts1->sprite->setScale(Cg.DaTingButton_Add.x + Cg.ButtonSpeed_Add, Cg.DaTingButton_Add.y + Cg.ButtonSpeed_Add);
+				Cg.ButtonSpeed_Remove = 0;
+			}
+		}
+		else {
+			Vector2f Scale_BeginButton = ts1->sprite->getScale();/*
+			cout << Scale_BeginButton.x << ' ' << Scale_BeginButton.y  << endl;*/
+			if (Cg.ButtonSpeed_Remove < 0.05) {
+				Cg.ButtonSpeed_Remove += 0.0001;
+				ts1->sprite->setScale(Cg.DaTingButton_remove.x - Cg.ButtonSpeed_Remove, Cg.DaTingButton_remove.y - Cg.ButtonSpeed_Remove);
+				Cg.ButtonSpeed_Add = 0;
+			}
+		}
+	}
+	void Updata(Vector2i& MousePosition) {
 		auto it = textures.find(currentID);
 		if (it != textures.end()) {
 			for (auto& ts : it->second) {
-				change(ts);
+				switch (currentID) {
+				case 0:
+					KaiMu_change(ts);
+					break;
+				case 1:
+					DaTingButtonUpdata(MousePosition);
+					break;
+				default:
+					break;
+				}
+				
 			}
 		}
-
+		
 	}
 	void draw(RenderWindow& win) {
 		auto it = textures.find(currentID);
@@ -82,6 +122,16 @@ public:
 				}
 			}
 		}
+	}
+	TextureSprite* getSprite(const string& name) {
+		auto it = textures.find(currentID);
+		if (it != textures.end()) {
+			for (auto& ts : it->second) {
+				if (ts.name == name)
+					return &ts;
+			}
+		}
+		return nullptr;
 	}
 private:
 	//释放非当前界面资源
@@ -106,6 +156,7 @@ private:
 		if (configIt != uiconfigs.end()) {
 			for (auto& config : configIt->second) {
 				TextureSprite ts = createSprite(config.path);
+				ts.name = config.name;
 				if (ts.sprite) {
 					ts.sprite->setPosition(config.PicturePos);
 					ts.sprite->setScale(config.scale);
