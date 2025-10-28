@@ -11,6 +11,11 @@ struct StateMachine {//模拟状态机
     int Myself_foot2 = 1;
     int decide_LeftOrRight = 0;//向右为1，向左为2
     int FrameRate = 2;//更新率调节
+
+    bool click_BeginGame = false;
+    bool click_Help = false;
+    bool click_Setting = false;
+    bool click_Exit = false;
     bool IsAttack = false;//判断是否攻击
     bool GunAppear = false;
     bool MousePressed = true;

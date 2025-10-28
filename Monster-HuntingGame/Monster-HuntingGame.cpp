@@ -30,7 +30,7 @@ int main() {
     Map Map_earth;
     People People_Myself;
     Event event;
-    KeyAndMouse KeyAndMouse;
+    KeyOrMouse KeyAndMouse;
     Weapon* DecideWeapon = nullptr;
     LoadTexture textures;
     if(DecideWeapon)
@@ -65,13 +65,13 @@ int main() {
             switch (ST.UI) {
             case 0:
                 textures.setCurrentUI(0);
-                textures.Updata(MousePosition);
+                textures.Updata(MousePosition, event);
                 textures.draw(win);
                 
                 break;
             case 1:
                 textures.setCurrentUI(1);
-                textures.Updata(MousePosition);
+                textures.Updata(MousePosition, event);
                 textures.draw(win);
                 break;
             case 5:

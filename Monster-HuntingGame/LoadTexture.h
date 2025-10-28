@@ -3,9 +3,11 @@
 #include<vector>
 #include<memory>
 #include<unordered_map>
+#include<Windows.h>
 #include<string>
 #include<iostream>
 #include"People.h"
+#include"KeyAndMouse.h"
 using namespace sf;
 using namespace std;
 struct TextureSprite {//设置智能指针自动管理内存，还挺好用~
@@ -39,8 +41,8 @@ public:
 	void setCurrentUI(int uiID);
 	TextureSprite KaiMu_change(TextureSprite& ts);
 	void LoadButtonResources();
-	void DaTingButtonUpdata(Vector2i& MousePosition);
-	void Updata(Vector2i& MousePosition);
+	void DaTingButtonUpdata(Vector2i& MousePosition, Event& event);
+	void Updata(Vector2i& MousePosition, Event& event);
 	void draw(RenderWindow& win);
 	TextureSprite* getSprite(const string& name);
 private:

@@ -2,10 +2,11 @@
 #include<SFML/Graphics.hpp>
 #include"People.h"
 using namespace sf;
-class KeyAndMouse {
+class KeyOrMouse {
 public:
-    KeyAndMouse();
+    KeyOrMouse();
+    static bool isClick();
     void ShouQiang_IsAttack(Event& event);
     void People_Move(Event& event);
-
+private:
 };

@@ -1,6 +1,6 @@
 #include"KeyAndMouse.h"
-KeyAndMouse::KeyAndMouse() {}
-void KeyAndMouse::ShouQiang_IsAttack(Event& event) {//¿ØÖÆÊÖÇ¹ÎäÆ÷ÊÇ·ñ¹¥»÷
+KeyOrMouse::KeyOrMouse() {}
+void KeyOrMouse::ShouQiang_IsAttack(Event& event) {//¿ØÖÆÊÖÇ¹ÎäÆ÷ÊÇ·ñ¹¥»÷
     if (ST.MousePressed) {
         if (Mouse::isButtonPressed(Mouse::Left)) {
             ST.IsAttack = true;
@@ -12,9 +12,16 @@ void KeyAndMouse::ShouQiang_IsAttack(Event& event) {//¿ØÖÆÊÖÇ¹ÎäÆ÷ÊÇ·ñ¹¥»÷
             ST.MousePressed = true;
     }
 }
-void KeyAndMouse::People_Move(Event& event) {
+bool KeyOrMouse::isClick() {
+    if (Mouse::isButtonPressed(Mouse::Left)) {
+        return true;
+    }
+    return false;
+}
+void KeyOrMouse::People_Move(Event& event) {
     if (Keyboard::isKeyPressed(Keyboard::D)) {//ÏòÓÒ
         ST.IsMoving_Right = true;
+        ST.UI = 1;
     }
     if (event.type == Event::KeyReleased) {
         if (event.key.code == Keyboard::D) {
@@ -23,7 +30,6 @@ void KeyAndMouse::People_Move(Event& event) {
     }
     if (Keyboard::isKeyPressed(Keyboard::A)) {//Ïò×ó
         ST.IsMoving_Left = true;
-        ST.UI = 1;
     }
     if (event.type == Event::KeyReleased) {
         if (event.key.code == Keyboard::A) {

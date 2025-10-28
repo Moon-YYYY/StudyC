@@ -54,7 +54,8 @@ void LoadTexture::LoadButtonResources() {
 		isLoadButton = true;
 	}
 }
-void LoadTexture::DaTingButtonUpdata(Vector2i& MousePosition) {
+void LoadTexture::DaTingButtonUpdata(Vector2i& MousePosition, Event& event) {
+	
 	LoadButtonResources();
 		if (ts1->sprite->getOrigin() == Vector2f(0, 0)) {
 			ts1->sprite->setOrigin(640, 80);
@@ -67,6 +68,10 @@ void LoadTexture::DaTingButtonUpdata(Vector2i& MousePosition) {
 		if (Cg.BeginGameScale <= 0.6) {
 			Cg.BeginGameScale += Cg.ScaleChangeSpeed;
 			ts1->sprite->setScale(Cg.BeginGameScale, Cg.BeginGameScale);
+		}
+		if (KeyOrMouse::isClick()) {
+			ST.UI = 5;
+			Sleep(200);
 		}
 	}
 	else {
@@ -118,7 +123,7 @@ void LoadTexture::DaTingButtonUpdata(Vector2i& MousePosition) {
 		}
 	}
 }
-void LoadTexture::Updata(Vector2i& MousePosition) {
+void LoadTexture::Updata(Vector2i& MousePosition, Event& event) {
 	auto it = textures.find(currentID);
 	if (it != textures.end()) {
 		for (auto& ts : it->second) {
@@ -127,7 +132,7 @@ void LoadTexture::Updata(Vector2i& MousePosition) {
 				KaiMu_change(ts);
 				break;
 			case 1:
-				DaTingButtonUpdata(MousePosition);
+				DaTingButtonUpdata(MousePosition, event);
 				break;
 			default:
 				break;
