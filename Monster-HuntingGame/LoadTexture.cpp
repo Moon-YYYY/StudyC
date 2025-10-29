@@ -69,9 +69,8 @@ void LoadTexture::DaTingButtonUpdata(Vector2i& MousePosition, Event& event) {
 			Cg.BeginGameScale += Cg.ScaleChangeSpeed;
 			ts1->sprite->setScale(Cg.BeginGameScale, Cg.BeginGameScale);
 		}
-		if (KeyOrMouse::isClick()) {
+		if (KeyOrMouse::isMouseLeftRelease(event)) {
 			ST.UI = 5;
-			Sleep(200);
 		}
 	}
 	else {
@@ -133,6 +132,7 @@ void LoadTexture::Updata(Vector2i& MousePosition, Event& event) {
 				break;
 			case 1:
 				DaTingButtonUpdata(MousePosition, event);
+				continue;
 				break;
 			default:
 				break;

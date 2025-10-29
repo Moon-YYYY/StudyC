@@ -1,15 +1,18 @@
 #include"KeyAndMouse.h"
 KeyOrMouse::KeyOrMouse() {}
-void KeyOrMouse::ShouQiang_IsAttack(Event& event) {//¿ØÖÆÊÖÇ¹ÎäÆ÷ÊÇ·ñ¹¥»÷
-    if (ST.MousePressed) {
-        if (Mouse::isButtonPressed(Mouse::Left)) {
-            ST.IsAttack = true;
-            ST.GunAppear = true;
+void KeyOrMouse::ShouQiang_IsAttack(Event& event) {
+    //¿ØÖÆÊÖÇ¹ÎäÆ÷ÊÇ·ñ¹¥»÷
+    if (ST.UI == 5) {
+        if (ST.MousePressed) {
+            if (Mouse::isButtonPressed(Mouse::Left)) {
+                ST.IsAttack = true;
+                ST.GunAppear = true;
+            }
         }
-    }
-    if (event.type == Event::MouseButtonReleased) {
-        if (event.key.code == Mouse::Left)
-            ST.MousePressed = true;
+        if (event.type == Event::MouseButtonReleased) {
+            if (event.key.code == Mouse::Left)
+                ST.MousePressed = true;
+        }
     }
 }
 bool KeyOrMouse::isClick() {
@@ -17,6 +20,16 @@ bool KeyOrMouse::isClick() {
         return true;
     }
     return false;
+}
+bool KeyOrMouse::isMouseLeftRelease(Event& event) {
+    if (event.type == Event::MouseButtonReleased) {
+        if (event.key.code == Mouse::Left) {
+            return true;
+        }
+    }
+    else {
+        return false;
+    }
 }
 void KeyOrMouse::People_Move(Event& event) {
     if (Keyboard::isKeyPressed(Keyboard::D)) {//ÏòÓÒ

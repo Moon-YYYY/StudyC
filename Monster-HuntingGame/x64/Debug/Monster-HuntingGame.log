@@ -1,13 +1,6 @@
-﻿  LoadTexture.cpp
+﻿  KeyAndMouse.cpp
 D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\People.h(43,32): warning C4305: “初始化”: 从“double”到“float”截断
-  (编译源文件“LoadTexture.cpp”)
+  (编译源文件“KeyAndMouse.cpp”)
   
-D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\LoadTexture.h(32,27): warning C4305: “初始化”: 从“double”到“float”截断
-  (编译源文件“LoadTexture.cpp”)
-  
-D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\LoadTexture.h(33,16): warning C4305: “初始化”: 从“double”到“float”截断
-  (编译源文件“LoadTexture.cpp”)
-  
-D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\LoadTexture.cpp(36,15): warning C4305: “+=”: 从“double”到“float”截断
-D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\LoadTexture.cpp(40,15): warning C4305: “+=”: 从“double”到“float”截断
+D:\c++gao\Monster-HuntingGame\Monster-HuntingGame\KeyAndMouse.cpp(33,1): warning C4715: “KeyOrMouse::isMouseLeftRelease”: 不是所有的控件路径都返回值
   Monster-HuntingGame.vcxproj -> D:\c++gao\Monster-HuntingGame\x64\Debug\Monster-HuntingGame.exe
