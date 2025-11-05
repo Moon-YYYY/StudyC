@@ -1,3 +1,7 @@
+/*
+此文件用于加载资源和释放资源，通过使用shared_ptr智能指针智能管理内存，
+同时此文件还有控制各种物件的动画的功能。
+*/
 #pragma once
 #include<SFML/Graphics.hpp>
 #include<vector>

@@ -1,3 +1,4 @@
+//LoadTexture.h的实现过程
 #include"LoadTexture.h"
 
 Change Cg;
