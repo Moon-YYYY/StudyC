@@ -176,7 +176,7 @@ void LoadTexture::releaseNonCurrIDResources(int currentID) {
 	}
 
 }
-//加载指定界面的资源，学习做项目的第n天——于洋
+//加载指定界面的资源
 void LoadTexture::LoadUIResources(int uiID) {
 	cout << "加载" << uiID << "的资源" << endl;
 	vector<TextureSprite> sprites;
@@ -201,7 +201,7 @@ void LoadTexture::LoadUIResources(int uiID) {
 		textures[uiID] = sprites;
 	}
 }
-//创建精灵，为什么要有精灵这东西，纹理自己不会贴上去吗，那很懒了
+//创建精灵
 TextureSprite LoadTexture::createSprite(const string& path) {
 	TextureSprite ts;
 	ts.texture = make_shared<Texture>();

@@ -14,7 +14,7 @@
 #include"KeyAndMouse.h"
 using namespace sf;
 using namespace std;
-struct TextureSprite {//设置智能指针自动管理内存，还挺好用~
+struct TextureSprite {//设置智能指针自动管理内存
 	string name;
 	shared_ptr<Sprite>sprite;
 	shared_ptr<Texture>texture;
@@ -52,9 +52,9 @@ public:
 private:
 	//释放非当前界面资源
 	void releaseNonCurrIDResources(int currentID);
-	//加载指定界面的资源，学习做项目的第n天——于洋
+	//加载指定界面的资源
 	void LoadUIResources(int uiID);
-	//创建精灵，为什么要有精灵这东西，纹理自己不会贴上去吗，那很懒了
+	//创建精灵
 	TextureSprite createSprite(const string& path);
 private:
 	int currentID = -1;
