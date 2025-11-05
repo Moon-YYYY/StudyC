@@ -15,9 +15,10 @@ int main() {
 	cout << e % 2 << endl;//输出1，奇数%2输出1
 	cout << f % 2 << endl;//输出0，偶数%2输出0
 
-	//取余符号还适用于取一个数的最低位
+	//取余符号还适用于取一个数的最低位或者最低两位甚至更多位
 	int number = 123456;
 	cout << number % 10 << endl;//输出6
+	cout << number % 100 << endl;//输出56
 
 	return 0;
 }
