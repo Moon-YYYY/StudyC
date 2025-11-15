@@ -18,8 +18,17 @@ public:
 		this->hp = hp;
 		cout << this << endl;//打印this，实际上是一个指针
 		cout << (*this).hp << endl;
+		cout << this->hp << endl;
+		cout << "-----" << endl;
+		cout << &(this->hp) << endl;//分隔符这两个输出的地址相同
+		cout << &((*this).hp) << endl;
+		cout << "-----" << endl;
+		cout << this << endl;//this默认指向hp的地址，因为hp写在了前面，默认指向当前对象的起始地址，hp是第一个声明的非静态数据成员。
+		cout << &hp2 << endl;
+		cout << "-----" << endl;
 	}
-	int hp;
+	int hp = 1;
+	int hp2 = 3;
 };
 class Hero2
 {
@@ -27,7 +36,7 @@ class Hero2
 	{
 		hp1 = hp1;//荧光笔的变量是同一个，所以此赋值无意义，Hero1使用this指针
 	}
-	int hp1;
+	int hp1 = 2;
 };
 int main()
 {
