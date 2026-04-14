@@ -1,0 +1,25 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+#include "CircleButton.h"
+
+QT_BEGIN_NAMESPACE
+namespace Ui {
+class MainWindow;
+}
+QT_END_NAMESPACE
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
+
+private:
+    CircleButton* KeyBoardUI;//不能在这里进行new申请空间，会导致this指针指向不完整
+    Ui::MainWindow *ui;
+};
+#endif // MAINWINDOW_H
