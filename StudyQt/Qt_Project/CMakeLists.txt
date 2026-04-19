@@ -13,6 +13,8 @@ qt_add_executable(CalculationTools
     mainwindow.ui
     CircleButton.h
     CircleButton.cpp
+    CalculatorWindow.h
+    CalculatorWindow.cpp
 )
 
 target_link_libraries(CalculationTools

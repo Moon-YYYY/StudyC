@@ -21,6 +21,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 设置窗口大小为屏幕尺寸
     this->resize(screenWidth, screenHeight);
+    
+    // 设置背景颜色为淡蓝色
+    QPalette palette;
+    palette.setBrush(QPalette::Window, QColor(220, 240, 255)); // 淡蓝色背景
+    this->setPalette(palette);
+    
     KeyBoardUI = new CircleButton(this);
     KeyBoardUI->resize(screenWidth, screenHeight);//需要子部件也调用resize函数
     //调用键盘的渲染
