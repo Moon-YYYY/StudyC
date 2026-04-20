@@ -39,6 +39,16 @@ CircleButton::CircleButton(QWidget* parent)
     // 设置按钮样式为透明背景，无边框
     setStyleSheet("background: transparent; border: none;");
     
+    // 初始化数字键盘数组
+    for(int i = 0; i < 5; ++i){
+        for(int j = 0; j < 4; ++j){
+            numberkeyboard[i][j] = nullptr;
+        }
+    }
+    
+    // 初始化设置按钮
+    SettingButton = nullptr;
+    
     // 初始化颜色动画
     colorAnimation = new QPropertyAnimation(this, "backgroundColor", this);
     colorAnimation->setDuration(100); // 动画持续时间：0.1秒
@@ -69,6 +79,8 @@ CircleButton::~CircleButton(){
             delete numberkeyboard[i][j];
         }
     }
+    //释放设置按钮的内存
+    delete SettingButton;
     // 释放颜色动画内存
     delete colorAnimation;
 }
@@ -83,7 +95,7 @@ void CircleButton::keyboardUI(){
                          {"4", "5", "6", "-"},
                          {"1", "2", "3", "+"},
                          {"%", "0", ".", "="}};
-
+    
     // 计算按钮的宽
     int buttonSizeX = this->width() / 4 - 10;
 
@@ -112,8 +124,14 @@ void CircleButton::keyboardUI(){
             numberkeyboard[i][j]->resize(buttonSize, buttonSize);
             numberkeyboard[i][j]->move(10 + j * ButtonPosX, this->height() - 20 - (5 - i) * ButtonPosY);
             numberkeyboard[i][j]->show();
+            numberkeyboard[i][j]->raise(); // 确保数字按钮在容器按钮之上
         }
     }
+    QString SettingButtonText = "···";
+    SettingButton = new CircleButton(SettingButtonText, this);
+    SettingButton->resize(buttonSize - 20, buttonSize - 20);//比正常的数字键盘按钮小一些
+    SettingButton->move(20, 20);
+    SettingButton->show();
 }
 
 /**

@@ -1,15 +1,16 @@
 #include "CalculatorWindow.h"
-#include <QPainter>
 #include <QScreen>
 #include <QRect>
 #include <QApplication>
+#include <QLineEdit>
+#include "CircleButton.h"
 
 /**
  * @brief 构造函数
  * @param parent 父窗口
  */
 CalculatorWindow::CalculatorWindow(QWidget *parent)
-    : QMainWindow(parent), displayText("0"), currentValue(0)
+    : QMainWindow(parent), currentValue(0)
 {
     // 获取屏幕尺寸
     QScreen *screen = QApplication::primaryScreen();
@@ -25,19 +26,41 @@ CalculatorWindow::CalculatorWindow(QWidget *parent)
     palette.setBrush(QPalette::Window, QColor(220, 240, 255)); // 淡蓝色背景
     this->setPalette(palette);
     
-    // 创建容器按钮
+    // 创建容器按钮（覆盖整个屏幕）
     containerButton = new CircleButton(this);
-    containerButton->resize(screenWidth, screenHeight);
+    // 容器按钮覆盖整个屏幕，这样就能获取到完整的屏幕大小
+    containerButton->setGeometry(0, 0, screenWidth, screenHeight);
     containerButton->show();
     
     // 初始化键盘布局
     containerButton->keyboardUI();
     
+    // 创建显示区域
+    displayEdit = new QLineEdit("0");
+    displayEdit->setParent(this);
+    displayEdit->setReadOnly(true);
+    displayEdit->setAlignment(Qt::AlignRight);
+    displayEdit->setFont(QFont("Arial", 30, QFont::Bold));
+    ///////////////////////////////////////////////////////////rgb在此处设置输入框的颜色////////////////////////////////////////////////////////
+    displayEdit->setStyleSheet("QLineEdit { background-color: rgb(220, 240, 255); border: none; padding: 10px; }"); // 淡蓝色背景，与按钮背景一致
+    // 输入框显示在屏幕上方，占屏幕高度的30%
+    displayEdit->setGeometry(0, 0, screenWidth, screenHeight * 0.3);
+    displayEdit->show();
+    
+    // 确保输入框在容器按钮之上
+    displayEdit->raise();
+    
     // 连接数字按钮的点击事件
     connectNumberButtons();
-    
-    // 确保容器按钮在显示区域下方
-    containerButton->lower();
+}
+
+/**
+ * @brief 析构函数
+ */
+CalculatorWindow::~CalculatorWindow()
+{
+    delete containerButton;
+    delete displayEdit;
 }
 
 /**
@@ -80,48 +103,21 @@ void CalculatorWindow::connectNumberButtons() {
 }
 
 /**
- * @brief 析构函数
- */
-CalculatorWindow::~CalculatorWindow()
-{
-    delete containerButton;
-}
-
-/**
  * @brief 添加数字到显示区域
  * @param num 要添加的数字
  */
 void CalculatorWindow::addNumber(const QString& num)
 {
+    // 获取当前显示的文本
+    QString currentText = displayEdit->text();
+    
     // 如果当前显示为0且不是添加小数点，则替换为新数字
-    if (displayText == "0" && num != ".") {
-        displayText = num;
+    if (currentText == "0" && num != ".") {
+        displayEdit->setText(num);
     } else {
         // 否则追加数字
-        displayText += num;
+        displayEdit->setText(currentText + num);
     }
-    // 更新显示
-    update();
 }
 
-/**
- * @brief 重写paintEvent，实现计算器界面的绘制
- * @param event 绘图事件
- */
-void CalculatorWindow::paintEvent(QPaintEvent* event)
-{
-    QMainWindow::paintEvent(event);
-    
-    QPainter painter(this);
-    
-    // 绘制显示区域
-    painter.setBrush(QColor(255, 255, 255)); // 白色背景
-    painter.setPen(Qt::NoPen);
-    int displayHeight = height() * 0.3;
-    painter.drawRect(10, 10, width() - 20, displayHeight);
-    
-    // 绘制显示文本
-    painter.setPen(Qt::black); // 黑色文本
-    painter.setFont(QFont("Arial", 30, QFont::Bold)); // 黑体
-    painter.drawText(10, 10, width() - 20, displayHeight, Qt::AlignRight | Qt::AlignVCenter, displayText);
-}
+

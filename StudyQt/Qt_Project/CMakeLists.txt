@@ -17,6 +17,9 @@ qt_add_executable(CalculationTools
     CalculatorWindow.cpp
 )
 
+set_target_properties(CalculationTools PROPERTIES
+   QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+
 target_link_libraries(CalculationTools
     PRIVATE
         Qt::Core

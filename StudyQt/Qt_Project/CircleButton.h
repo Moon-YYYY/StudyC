@@ -20,6 +20,7 @@ private:
     QString str;              // 按钮显示的文本
     bool isContainer;         // 是否为容器按钮（用于键盘布局）
     CircleButton* numberkeyboard[5][4]; // 数字键盘按钮数组
+    CircleButton* SettingButton; // 设置按钮
     QColor backgroundColor;   // 按钮背景颜色
     QPropertyAnimation* colorAnimation; // 颜色过渡动画
     QColor targetColor;       // 目标颜色（未使用，预留）

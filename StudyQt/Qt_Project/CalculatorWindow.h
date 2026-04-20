@@ -2,6 +2,7 @@
 #define CALCULATORWINDOW_H
 
 #include <QMainWindow>
+#include <QLineEdit>
 #include "CircleButton.h"
 
 /**
@@ -16,7 +17,7 @@ class CalculatorWindow : public QMainWindow
 
 private:
     CircleButton* containerButton; // 容器按钮，用于放置数字键盘
-    QString displayText;           // 显示的文本
+    QLineEdit* displayEdit;        // 显示的文本框
     double currentValue;           // 当前值
 
 public:
@@ -36,19 +37,13 @@ public:
      * @param num 要添加的数字
      */
     void addNumber(const QString& num);
-    
+
 private:
     /**
      * @brief 连接数字按钮的点击事件
      */
     void connectNumberButtons();
 
-protected:
-    /**
-     * @brief 重写paintEvent，实现计算器界面的绘制
-     * @param event 绘图事件
-     */
-    void paintEvent(QPaintEvent* event) override;
 };
 
 #endif // CALCULATORWINDOW_H
