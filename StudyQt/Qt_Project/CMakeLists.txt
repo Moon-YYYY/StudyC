@@ -15,6 +15,10 @@ qt_add_executable(CalculationTools
     CircleButton.cpp
     CalculatorWindow.h
     CalculatorWindow.cpp
+    calculateWay.h
+    calculateWay.cpp
+    menuButton.h
+    menuButton.cpp
 )
 
 set_target_properties(CalculationTools PROPERTIES

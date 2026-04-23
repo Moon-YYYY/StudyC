@@ -22,6 +22,7 @@ private:
     CircleButton* numberkeyboard[5][4]; // 数字键盘按钮数组
     CircleButton* SettingButton; // 设置按钮
     QColor backgroundColor;   // 按钮背景颜色
+    bool isRectangle;         // 是否为矩形按钮入口
     QPropertyAnimation* colorAnimation; // 颜色过渡动画
     QColor targetColor;       // 目标颜色（未使用，预留）
     bool isAnimating;         // 动画状态标志
@@ -39,7 +40,15 @@ public:
      * @param parent 父窗口
      */
     CircleButton(QWidget* parent = nullptr);
-    
+    /**
+     * @brief 构造函数，创建菜单按钮入口
+     * @param x 按钮位置的x坐标
+     * @param y 按钮位置的y坐标
+     * @param shape 按钮形状
+     * @param parent 父窗口
+     */
+    CircleButton(int x, int y, const QString& shape = "" , QWidget* parent = nullptr);
+
     /**
      * @brief 析构函数
      */
@@ -75,6 +84,24 @@ public:
      * @return 对应的圆形按钮
      */
     CircleButton* getNumberButton(int row, int col);
+    
+    /**
+     * @brief 设置按钮形状
+     * @param shape 按钮形状
+     */
+    void setShape(const QString& shape);
+    
+    /**
+     * @brief 设置字体颜色
+     * @param color 字体颜色
+     */
+    void setFontColor(const QColor& color);
+    
+    /**
+     * @brief 设置字体加粗
+     * @param bold 是否加粗
+     */
+    void setFontBold(bool bold);
 
 protected:
     /**
