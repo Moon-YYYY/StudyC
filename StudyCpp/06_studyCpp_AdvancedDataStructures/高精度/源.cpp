@@ -13,13 +13,14 @@ public:
 	BigInt(const BigInt& bi);//拷贝构造
 	BigInt(char s[]);//将字符串中的数字解析成int类型并且存储到data数组里
 	BigInt& operator=(const BigInt& bi);//=重载
+	BigInt operator+(const BigInt& bi);//加法重载
 	void print(char end);//打印
 };
 BigInt::BigInt() :m_size(0) {
 	memset(m_data, 0, sizeof(m_data));//将m_data初始化为0
 }
 BigInt::BigInt(const BigInt& bi) :m_size(bi.m_size){
-	memcpy(m_data, bi.m_data, sizeof(bi.m_size));//从bi拷贝到this
+	memcpy(m_data, bi.m_data, sizeof(bi.m_data));//从bi拷贝到this
 }
 BigInt::BigInt(char s[]) {
 	int b = 1;//记录当前数位对应的权值，10，100，1000，10000...
@@ -40,8 +41,20 @@ BigInt::BigInt(char s[]) {
 }
 BigInt& BigInt::operator=(const BigInt& bi) {
 	m_size = bi.m_size;
-	memcpy(m_data, bi.m_data, sizeof(bi.m_size));//重载=
+	memcpy(m_data, bi.m_data, sizeof(bi.m_data));//重载=
 	return *this;
+}
+BigInt BigInt::operator+(const BigInt& bi) {
+	BigInt ret;
+	int i = 0, carry = 0;
+	for (i = 0; i < m_size || i < bi.m_size || carry > 0; ++i) {
+		if (i < m_size) { carry += m_data[i]; }
+		if (i < bi.m_size) { carry += bi.m_data[i]; }
+		ret.m_data[i] = carry % Base;
+		carry /= Base;
+	}
+	ret.m_size = i;
+	return ret;
 }
 void BigInt::print(char end) {//传入最后想打印的数据
 	cout << (m_size == 0 ? 0 : m_data[m_size - 1]);
@@ -54,9 +67,12 @@ void BigInt::print(char end) {//传入最后想打印的数据
 }
 int main() {
 	char s[1000];
-		while (cin >> s) {
+	char s2[1000];
+		while (cin >> s >> s2) {
 			BigInt b(s);
-			b.print('\n');
+			BigInt b2(s2);
+			b2 = b2 + b;
+			b2.print('\n');
 	}
 	return 0;
 }

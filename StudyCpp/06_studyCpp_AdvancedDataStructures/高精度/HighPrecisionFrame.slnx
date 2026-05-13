@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="HighPrecisionFrame.vcxproj" />
+  <Project Path="HighPrecisionFrame.vcxproj" Id="9dd0a032-9e74-494a-9330-8be3bcdde47d" />
 </Solution>
