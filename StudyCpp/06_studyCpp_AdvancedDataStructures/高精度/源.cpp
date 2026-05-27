@@ -14,6 +14,8 @@ public:
 	BigInt(char s[]);//将字符串中的数字解析成int类型并且存储到data数组里
 	BigInt& operator=(const BigInt& bi);//=重载
 	BigInt operator+(const BigInt& bi);//加法重载
+	BigInt operator-(const BigInt& bi);//减法重载
+	int compare(const BigInt& bi);
 	void print(char end);//打印
 };
 BigInt::BigInt() :m_size(0) {
@@ -56,6 +58,29 @@ BigInt BigInt::operator+(const BigInt& bi) {
 	ret.m_size = i;
 	return ret;
 }
+
+BigInt BigInt::operator-(const BigInt& bi) {
+	BigInt ret;
+	int carry = 0;
+	ret.m_size = m_size;
+	for (int i = 0; i < ret.m_size; ++i) {
+		ret.m_data[i] = m_data[i] - carry;
+		if (i < bi.m_size) {
+			ret.m_data[i] -= bi.m_data[i];
+		}
+		if (ret.m_data[i] < 0) {
+			carry = 1;
+			ret.m_data[i] += Base;
+		}
+		else {
+			carry = 0;
+		}
+	}
+	while (ret.m_size > 0 && ret.m_data[ret.m_size - 1] == 0) {//去除前导零
+		--ret.m_size;
+	}
+	return ret;
+}
 void BigInt::print(char end) {//传入最后想打印的数据
 	cout << (m_size == 0 ? 0 : m_data[m_size - 1]);
 	for (int i = m_size - 2; i >= 0; --i) {//从高位到低位打印
@@ -65,14 +90,32 @@ void BigInt::print(char end) {//传入最后想打印的数据
 	}
 	cout << end;
 }
+int BigInt::compare(const BigInt& bi) {
+	if (m_size != bi.m_size) {
+		return m_size > bi.m_size ? 1 : -1;
+	}
+	for (int i = m_size - 1; i >= 0; --i) {
+		if (m_data[i] != bi.m_data[i]) {
+			return m_data[i] > bi.m_data[i] ? 1 : -1;
+		}
+	}
+	return 0;
+}
 int main() {
 	char s[1000];
 	char s2[1000];
 		while (cin >> s >> s2) {
 			BigInt b(s);
 			BigInt b2(s2);
-			b2 = b2 + b;
-			b2.print('\n');
+			if (b.compare(b2) == 1) {
+				b = b - b2;
+				b.print('\n');
+			}
+			else {
+				b2 = b2 - b;
+				cout << "-";
+				b2.print('\n');
+			}
 	}
 	return 0;
 }
