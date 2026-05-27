@@ -15,6 +15,7 @@ public:
 	BigInt& operator=(const BigInt& bi);//=重载
 	BigInt operator+(const BigInt& bi);//加法重载
 	BigInt operator-(const BigInt& bi);//减法重载
+	BigInt operator*(const BigInt& bi);//乘法重载
 	int compare(const BigInt& bi);
 	void print(char end);//打印
 };
@@ -81,6 +82,31 @@ BigInt BigInt::operator-(const BigInt& bi) {
 	}
 	return ret;
 }
+BigInt BigInt::operator*(const BigInt& bi) {
+	BigInt ret;
+	ret.m_size = m_size + bi.m_size;
+	for (int i = 0; i < ret.m_size; ++i) {
+		ret.m_data[i] = 0;
+	}
+	for (int i = 0; i < m_size; ++i) {
+		int carry = 0;
+		for (int j = 0; j < bi.m_size; ++j) {
+			ret.m_data[i + j] += m_data[i] * bi.m_data[j] + carry;
+			if (ret.m_data[i + j] >= Base) {
+				carry = ret.m_data[i + j] / Base;
+				ret.m_data[i + j] %= Base;
+			}
+			else {
+				carry = 0;
+			}
+		}
+		ret.m_data[i + bi.m_size] += carry;
+	}
+	while (ret.m_size > 0 && ret.m_data[ret.m_size - 1] == 0) {//去除前导零
+		--ret.m_size;
+	}
+	return ret;
+}
 void BigInt::print(char end) {//传入最后想打印的数据
 	cout << (m_size == 0 ? 0 : m_data[m_size - 1]);
 	for (int i = m_size - 2; i >= 0; --i) {//从高位到低位打印
@@ -107,15 +133,7 @@ int main() {
 		while (cin >> s >> s2) {
 			BigInt b(s);
 			BigInt b2(s2);
-			if (b.compare(b2) == 1) {
-				b = b - b2;
-				b.print('\n');
-			}
-			else {
-				b2 = b2 - b;
-				cout << "-";
-				b2.print('\n');
-			}
+			(b * b2).print('\n');
 	}
 	return 0;
 }
