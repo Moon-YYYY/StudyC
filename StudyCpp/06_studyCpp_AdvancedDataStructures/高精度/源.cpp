@@ -12,10 +12,12 @@ public:
 	BigInt();//构造函数
 	BigInt(const BigInt& bi);//拷贝构造
 	BigInt(char s[]);//将字符串中的数字解析成int类型并且存储到data数组里
+	BigInt(int v);
 	BigInt& operator=(const BigInt& bi);//=重载
-	BigInt operator+(const BigInt& bi);//加法重载
-	BigInt operator-(const BigInt& bi);//减法重载
-	BigInt operator*(const BigInt& bi);//乘法重载
+	BigInt operator+(const BigInt& bi)const;//加法重载
+	BigInt operator-(const BigInt& bi)const;//减法重载
+	BigInt operator*(const BigInt& bi)const;//乘法重载
+	BigInt operator/(const BigInt& bi)const;//除法重载
 	int compare(const BigInt& bi);
 	void print(char end);//打印
 };
@@ -24,6 +26,12 @@ BigInt::BigInt() :m_size(0) {
 }
 BigInt::BigInt(const BigInt& bi) :m_size(bi.m_size){
 	memcpy(m_data, bi.m_data, sizeof(bi.m_data));//从bi拷贝到this
+}
+BigInt::BigInt(int v):m_size(0) {
+	while (v > 0) {
+		m_data[m_size++] = v % Base;
+		v /= Base;
+	}
 }
 BigInt::BigInt(char s[]) {
 	int b = 1;//记录当前数位对应的权值，10，100，1000，10000...
@@ -47,7 +55,7 @@ BigInt& BigInt::operator=(const BigInt& bi) {
 	memcpy(m_data, bi.m_data, sizeof(bi.m_data));//重载=
 	return *this;
 }
-BigInt BigInt::operator+(const BigInt& bi) {
+BigInt BigInt::operator+(const BigInt& bi) const {
 	BigInt ret;
 	int i = 0, carry = 0;
 	for (i = 0; i < m_size || i < bi.m_size || carry > 0; ++i) {
@@ -60,7 +68,7 @@ BigInt BigInt::operator+(const BigInt& bi) {
 	return ret;
 }
 
-BigInt BigInt::operator-(const BigInt& bi) {
+BigInt BigInt::operator-(const BigInt& bi) const {
 	BigInt ret;
 	int carry = 0;
 	ret.m_size = m_size;
@@ -82,7 +90,7 @@ BigInt BigInt::operator-(const BigInt& bi) {
 	}
 	return ret;
 }
-BigInt BigInt::operator*(const BigInt& bi) {
+BigInt BigInt::operator*(const BigInt& bi) const{
 	BigInt ret;
 	ret.m_size = m_size + bi.m_size;
 	for (int i = 0; i < ret.m_size; ++i) {
@@ -104,6 +112,32 @@ BigInt BigInt::operator*(const BigInt& bi) {
 	}
 	while (ret.m_size > 0 && ret.m_data[ret.m_size - 1] == 0) {//去除前导零
 		--ret.m_size;
+	}
+	return ret;
+}
+BigInt BigInt::operator/(const BigInt& bi) const {
+	BigInt ret;
+	BigInt carry = 0;
+	int left, right, mid;
+	for (int i = m_size - 1; i >= 0; --i) {
+		carry = carry * Base + m_data[i];
+		left = -1;
+		right = Base;
+		while (left + 1 < right) {
+			mid = (left + right) / 2;
+			if ((bi * mid).compare(carry) <= 0) {
+				left = mid;
+			}
+			else {
+				right = mid;
+			}
+		}
+		ret.m_data[i] = left;
+		carry = carry - bi * left;
+	}
+	ret.m_size = m_size;
+	while (ret.m_size > 0 && ret.m_data[ret.m_size - 1] == 0) {//去除前导零
+			--ret.m_size;
 	}
 	return ret;
 }
@@ -133,7 +167,8 @@ int main() {
 		while (cin >> s >> s2) {
 			BigInt b(s);
 			BigInt b2(s2);
-			(b * b2).print('\n');
+			b = b / b2;
+			b.print('\n');
 	}
 	return 0;
 }
