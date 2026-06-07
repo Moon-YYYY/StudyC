@@ -40,6 +40,12 @@ public:
      */
     void addNumber(const QString& num);
 
+    /**
+     * @brief 更新显示区域的背景颜色
+     * @param color 新的背景颜色
+     */
+    void updateDisplayBackground(const QColor& color);
+
 private:
     /**
      * @brief 连接数字按钮的点击事件

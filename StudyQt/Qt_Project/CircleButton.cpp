@@ -2,6 +2,9 @@
 #include <QMouseEvent>
 #include <QSequentialAnimationGroup>
 
+// 初始化静态成员变量
+QColor CircleButton::s_bgColor = QColor(220, 240, 255);
+
 /**
  * @brief 构造函数，创建带文本的圆形按钮
  * @param str 按钮显示的文本
@@ -9,7 +12,7 @@
  */
 CircleButton::CircleButton(const QString& str, QWidget* parent)
     :QPushButton(str, parent), isContainer(false), backgroundColor(QColor(255, 255, 255)),
-     isAnimating(false), isPressed(false), isRectangle(false){
+     isAnimating(false), isPressed(false), isRectangle(false), isMenuToggle(false){
     // 设置按钮样式为透明背景，无边框
     setStyleSheet("background: transparent; border: none;");
     
@@ -35,7 +38,7 @@ CircleButton::CircleButton(const QString& str, QWidget* parent)
 
 CircleButton::CircleButton(QWidget* parent)
     :QPushButton(parent), isContainer(true), backgroundColor(QColor(255, 255, 255)),
-     isAnimating(false), isPressed(false), isRectangle(false){
+     isAnimating(false), isPressed(false), isRectangle(false), isMenuToggle(false){
     // 设置按钮样式为透明背景，无边框
     setStyleSheet("background: transparent; border: none;");
     
@@ -71,32 +74,25 @@ CircleButton::CircleButton(QWidget* parent)
 
 CircleButton::CircleButton(int x, int y, const QString& shape, QWidget* parent):
     QPushButton(parent), isContainer(false), backgroundColor(QColor(220, 240, 255)),
-     isAnimating(false), isPressed(false), isRectangle(true){
+     isAnimating(false), isPressed(false), isRectangle(true), isMenuToggle(true){
        // 设置按钮位置
     move(x, y);
     // 设置按钮大小
-    setFixedSize(50, 50);
+    setFixedSize(44, 44);
     // 设置按钮形状
     setShape(shape);
-    // 设置按钮文本
-    setText("...");
-    // 设置按钮字体大小
-    setFont(QFont("Arial", 16, QFont::Bold));
-    // 设置按钮样式：文本居中，背景淡蓝色用rgb写，无边框
+    // 不设置文本（由paintEvent绘制汉堡图标）
+    setText("");
+    // 设置按钮样式：透明背景，无边框，鼠标手势
+    setCursor(Qt::PointingHandCursor);
     setStyleSheet("QPushButton {"
-              "text-align: center;"
               "border: none;"
-              "background-color: rgb(220, 240, 255);"
-              "}"
-              "QPushButton:pressed {"
-              "background-color: rgba(187, 195, 200, 1);"
+              "background: transparent;"
               "}"
               "QPushButton:focus {"
               "outline: none;"
               "}");
-
-    // 设置按钮背景颜色为淡蓝色
-    setBackgroundColor(backgroundColor);
+    setToolTip("菜单");
     
     // // 初始化颜色动画
      //colorAnimation = new QPropertyAnimation(this, "backgroundColor", this);
@@ -149,6 +145,16 @@ void CircleButton::setFontBold(bool bold){
     QFont font = this->font();
     font.setBold(bold);
     this->setFont(font);
+}
+
+// ===== 全局背景颜色静态方法 =====
+
+QColor CircleButton::globalBackgroundColor() {
+    return s_bgColor;
+}
+
+void CircleButton::setGlobalBackgroundColor(const QColor& color) {
+    s_bgColor = color;
 }
 
 /**
@@ -210,6 +216,11 @@ void CircleButton::keyboardUI(){
             numberkeyboard[i][j] = new CircleButton(str[i][j], this);
             numberkeyboard[i][j]->resize(buttonSize, buttonSize);
             numberkeyboard[i][j]->move(10 + j * ButtonPosX, this->height() - 20 - (5 - i) * ButtonPosY);
+            // 设置字体大小，使其适配按钮尺寸
+            QFont btnFont = numberkeyboard[i][j]->font();
+            btnFont.setPixelSize(buttonSize * 0.45);
+            btnFont.setBold(true);
+            numberkeyboard[i][j]->setFont(btnFont);
             numberkeyboard[i][j]->show();
             numberkeyboard[i][j]->raise(); // 确保数字按钮在容器按钮之上
         }
@@ -296,6 +307,50 @@ void CircleButton::mouseReleaseEvent(QMouseEvent* event) {
  * @param Event 绘图事件
  */
 void CircleButton::paintEvent(QPaintEvent* Event){
+    // 菜单切换按钮：绘制汉堡图标
+    if(isMenuToggle){
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QRect r = rect();
+        bool isPressedState = isDown();
+
+        // 背景颜色（按下时变深）- 使用全局背景颜色
+        QColor bgColor = isPressedState ? s_bgColor.darker(110) : s_bgColor;
+        painter.setBrush(bgColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), 12, 12);
+
+        // 绘制三条横线（汉堡菜单图标）
+        int lineWidth = r.width() * 0.5;
+        int lineHeight = 3;
+        int lineRadius = 2;
+        int centerX = r.width() / 2;
+        int centerY = r.height() / 2;
+        int spacing = 7; // 线间距
+
+        QColor lineColor = QColor(80, 80, 80);
+
+        // 上横线
+        painter.setBrush(lineColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(centerX - lineWidth/2, centerY - spacing, lineWidth, lineHeight, lineRadius, lineRadius);
+
+        // 中横线
+        painter.drawRoundedRect(centerX - lineWidth/2, centerY - lineHeight/2, lineWidth, lineHeight, lineRadius, lineRadius);
+
+        // 下横线
+        painter.drawRoundedRect(centerX - lineWidth/2, centerY + spacing - lineHeight, lineWidth, lineHeight, lineRadius, lineRadius);
+
+        // 绘制文本（如果有）
+        if(!text().isEmpty()){
+            painter.setPen(Qt::black);
+            painter.setFont(font());
+            painter.drawText(r, Qt::AlignCenter, text());
+        }
+        return;
+    }
+
     //如果是方形直接返回
        if(isRectangle){
         QPushButton::paintEvent(Event);
@@ -306,7 +361,7 @@ void CircleButton::paintEvent(QPaintEvent* Event){
     // 如果是容器则使用与主窗口协调的背景颜色
     if(isContainer){
         // 绘制背景
-        painter.setBrush(QColor(220, 240, 255));  // 与主窗口一致的淡蓝色背景
+        painter.setBrush(s_bgColor);  // 使用全局背景颜色
         painter.setPen(Qt::NoPen);
         painter.drawRect(rect());  // 绘制整个矩形区域
         return;
@@ -333,8 +388,6 @@ void CircleButton::paintEvent(QPaintEvent* Event){
     
     // 绘制按钮文本
     painter.setPen(Qt::black); // 设置文本颜色为黑色
-    painter.setFont(font()); // 使用按钮的字体
     painter.drawText(rect(), Qt::AlignCenter, text()); // 居中绘制文本
 
 }
-

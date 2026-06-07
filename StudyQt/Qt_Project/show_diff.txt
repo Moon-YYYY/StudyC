@@ -1,0 +1,37 @@
+==================== 修改①：构造函数中（menuButton.cpp 第192~196行） ====================
+
+修改前：
+    setStyleSheet("background-color: rgb(255, 255, 255);");
+    move(-panelWidth, 0);
+
+修改后（新增了3行 + 加粗标记↓）：
+    setStyleSheet("background-color: rgb(255, 255, 255);");
+    QPalette pal = palette();                              ★ 新增
+    pal.setColor(QPalette::Window, QColor(255, 255, 255));  ★ 新增
+    setPalette(pal);                                       ★ 新增
+    setAutoFillBackground(true);                           ★ 新增
+    move(-panelWidth, 0);
+
+=======================================================================
+
+==================== 修改②：paintEvent函数中（menuButton.cpp 第304~310行） ====================
+
+修改前：
+    void menuButton::paintEvent(QPaintEvent* event)
+    {
+        QWidget::paintEvent(event);
+    }
+
+修改后（新增了2行 + 加粗标记↓）：
+    void menuButton::paintEvent(QPaintEvent* event)
+    {
+        // 显式填充白色背景，确保整个面板区域（包括底部留白）不透明
+        QPainter painter(this);                              ★ 新增
+        painter.fillRect(rect(), QColor(255, 255, 255));     ★ 新增：把整个面板涂成白色
+        QWidget::paintEvent(event);
+    }
+
+=======================================================================
+
+总共就改了这5行代码（2处修改），效果就是：
+菜单打开时 → 整个左侧面板都是纯白背景 → 按钮下方不再透出计算器内容

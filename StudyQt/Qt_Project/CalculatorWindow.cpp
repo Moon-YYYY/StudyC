@@ -1,9 +1,9 @@
-#include "CalculatorWindow.h"
-#include <QScreen>
-#include <QRect>
-#include <QApplication>
-#include <QLineEdit>
-#include "CircleButton.h"
+#include "CalculatorWindow.h"  // 计算器窗口头文件：声明 CalculatorWindow 类
+#include <QScreen>             // 屏幕信息类：获取屏幕尺寸、DPI、显示方向等
+#include <QRect>               // 矩形类：表示屏幕或控件的几何尺寸和位置
+#include <QApplication>        // 应用程序类：提供全局的应用程序信息和设置
+#include <QLineEdit>           // 单行文本输入框：用于显示计算表达式和结果
+#include "CircleButton.h"      // 圆形按钮控件：计算器数字键和功能键
 
 /**
  * @brief 构造函数
@@ -21,9 +21,10 @@ CalculatorWindow::CalculatorWindow(CircleButton* keyBoardUI, QWidget *parent)
     // 设置窗口大小为屏幕尺寸*0.3
     this->resize(screenWidth, screenHeight * 0.2);
     
-    // 设置背景颜色为淡蓝色
+    // 使用全局背景颜色（与主窗口一致）
+    QColor initColor = CircleButton::globalBackgroundColor();
     QPalette palette;
-    palette.setBrush(QPalette::Window, QColor(220, 240, 255)); // 淡蓝色背景
+    palette.setBrush(QPalette::Window, initColor);
     this->setPalette(palette);
     
     // 初始化计算逻辑对象
@@ -38,8 +39,9 @@ CalculatorWindow::CalculatorWindow(CircleButton* keyBoardUI, QWidget *parent)
     displayEdit->setAlignment(Qt::AlignRight);
     //设置字体
     displayEdit->setFont(QFont("Arial", 30, QFont::Bold));
-    ///////////////////////////////////////////////////////////rgb在此处设置输入框的颜色////////////////////////////////////////////////////////
-    displayEdit->setStyleSheet("QLineEdit { background-color: rgb(220, 240, 255); border: none; padding: 10px; }"); // 淡蓝色背景，与按钮背景一致
+    // 使用全局背景颜色设置输入框背景
+    QString colorName = initColor.name();
+    displayEdit->setStyleSheet(QString("QLineEdit { background-color: %1; border: none; padding: 10px; }").arg(colorName));
     // 输入框显示在屏幕上方，占屏幕高度的30%
     displayEdit->setGeometry(0, 0, screenWidth, screenHeight * 0.3);
     displayEdit->show();
@@ -192,6 +194,24 @@ void CalculatorWindow::connectNumberButtons() {
             currentValue = result;
         });
     }
+}
+
+/**
+ * @brief 更新显示区域的背景颜色
+ * @param color 新的背景颜色
+ */
+void CalculatorWindow::updateDisplayBackground(const QColor& color)
+{
+    // 更新背景颜色
+    QPalette pal;
+    pal.setBrush(QPalette::Window, color);
+    this->setPalette(pal);
+
+    // 更新输入框的背景
+    QString colorName = color.name();
+    displayEdit->setStyleSheet(
+        QString("QLineEdit { background-color: %1; border: none; padding: 10px; }").arg(colorName)
+    );
 }
 
 /**
