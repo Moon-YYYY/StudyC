@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QtCore>
 #include <QtMath>
+#include <QStyle>
 
 /**
  * @brief 自定义图标按钮，用 QPainter 绘制矢量图标
@@ -393,6 +394,29 @@ void menuButton::hideMenu()
 {
     if (!panelVisible) {
         return;
+    }
+
+    // ===== 修复按钮状态卡住问题 =====
+    // 当菜单项被点击时，会先通过信号触发 StyledDialog::exec()。
+    // exec() 会进入一个嵌套的事件循环并阻塞返回，导致按钮的
+    // mouse release 事件无法被正常处理。
+    //
+    // 当 exec() 返回后，按钮的 "pressed" 状态仍然被 Qt 的
+    // 样式系统缓存，即使调用 setDown(false) 也无法完全清除。
+    //
+    // 修复方案：
+    //   1. setDown(false)：重置 Qt 内部的下压状态
+    //   2. style()->unpolish(btn): 卸载当前样式，清除样式缓存
+    //   3. style()->polish(btn): 重新加载样式，从初始状态开始
+    //   4. btn->update(): 强制立即重绘
+    //
+    // 这种 unpolish/polish 循环是 Qt 中"完全重置控件状态"
+    // 的标准做法，常用于解决伪类状态卡住的 BUG。
+    for (auto* btn : buttons) {
+        btn->setDown(false);
+        btn->style()->unpolish(btn);
+        btn->style()->polish(btn);
+        btn->update();
     }
 
     int panelWidth = width();

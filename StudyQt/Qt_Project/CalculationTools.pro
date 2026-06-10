@@ -76,7 +76,9 @@ SOURCES += \
     menuButton.cpp \           # 菜单按钮：点击弹出设置/主题/关于等菜单
     SettingsWidget.cpp \       # 设置页面：主题切换 + 按键音 + 其他偏好设置
     UpdateChecker.cpp \        # 更新检查器：从 Gitee 获取版本信息
-    UpdateDialog.cpp           # 更新弹窗：显示版本号和更新日志的模态对话框
+    UpdateDialog.cpp \         # 更新弹窗：显示版本号和更新日志的模态对话框
+    StyledDialog.cpp \         # 统一风格弹窗：替代 QMessageBox 的通用模态对话框
+    StyledProgressDialog.cpp   # 统一风格进度弹窗：下载更新进度条
 
 # =============================================================================
 # 4. 头文件（HEADERS）
@@ -98,7 +100,9 @@ HEADERS += \
     menuButton.h \           # 菜单按钮类声明（QPushButton 子类，含 Q_OBJECT）
     SettingsWidget.h \       # 设置页面类声明（QWidget 子类，含 Q_OBJECT）
     UpdateChecker.h \        # 更新检查器类声明（QObject 子类，含 Q_OBJECT + 信号槽）
-    UpdateDialog.h           # 更新弹窗类声明（QDialog 子类，含 Q_OBJECT + paintEvent）
+    UpdateDialog.h \         # 更新弹窗类声明（QDialog 子类，含 Q_OBJECT + paintEvent）
+    StyledDialog.h \         # 统一风格弹窗类声明（QDialog 子类，含 Q_OBJECT + paintEvent）
+    StyledProgressDialog.h   # 统一风格进度弹窗类声明（QDialog 子类，含 Q_OBJECT + UI）
 
 # =============================================================================
 # 5. UI 表单文件（FORMS）
@@ -139,6 +143,11 @@ android {
     # 仅在 Android 平台添加 APK 下载器的源文件
     # 这样在 Windows 上编译不会因为找不到 JNI 头文件而报错
     SOURCES += ApkDownloader.cpp
+
+    # 引入 OpenSSL 库（Android 运行时必需）
+    # Qt 的 QNetworkAccessManager 在 Android 上依赖 OpenSSL 3.x 动态库
+    # libcrypto_3.so + libssl_3.so 必须打包进 APK，否则应用启动后无法运行
+    include($$PWD/android_openssl/openssl.pri)
 }
 
 # =============================================================================

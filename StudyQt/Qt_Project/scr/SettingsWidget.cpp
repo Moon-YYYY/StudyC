@@ -517,6 +517,20 @@ void ColorPickerWidget::createPopupPanel()
      */
     if (m_popupPanel) {
         m_popupPanel->deleteLater();
+        m_popupPanel = nullptr;
+    }
+
+    /*
+     * 清空按钮组：移除所有已注册的按钮。
+     * 因为旧面板中的按钮通过 deleteLater 延迟销毁，
+     * 但按钮组仍然持有它们的指针，需要先清除。
+     * QButtonGroup 没有直接的 clear() 方法，
+     * 所以通过遍历移除所有按钮来实现。
+     * 注意：从按钮组移除按钮不会删除按钮对象本身。
+     */
+    QList<QAbstractButton*> allButtons = m_buttonGroup->buttons();
+    for (QAbstractButton* btn : allButtons) {
+        m_buttonGroup->removeButton(btn);
     }
 
     /*
@@ -640,37 +654,39 @@ void ColorPickerWidget::createPopupPanel()
 
         if (isSelected) {
             /*
-             * 选中状态下绘制黑色环形外圈：
+             * 选中状态下绘制黑色环形外圈（高亮边框）：
              *
-             * setPen(QPen(QColor(0, 0, 0), 2))：
-             *   设置画笔为 2 像素宽的黑色线条。
+             * 绘制原理：先画一个较大的黑色实心圆作为"环底"，
+             * 再在其上覆盖更小的颜色实心圆，露出黑色边缘形成环形。
              *
-             * setBrush(Qt::NoBrush)：
-             *   不填充。
+             * 这种"上色覆盖"的方式比直接绘制环形路径更可靠，
+             * 可以保证环形间隙在各个方向上完全均匀（均为 2 像素）。
              *
-             * drawEllipse(1, 1, 26, 26)：
-             *   在 (1, 1) 到 (27, 27) 的区域绘制椭圆（即黑色环形外圈）。
+             * 步骤一：绘制黑色实心圆（环形底色）
+             *   drawEllipse(2, 2, 24, 24)：
+             *     在 28x28 画布上，距各边 2px 的位置画直径 24px 的黑色实心圆。
+             *     这个圆将作为选中高亮的黑色环形背景。
              *
-             * 黑色环形的目的是高亮显示当前选中的颜色。
-             *
-             * 然后绘制内部色块（比外圈略小，形成缝隙感）：
-             * drawEllipse(3, 3, 22, 22)：
-             *   在内部绘制更小的圆形色块，与黑色外圈之间
-             *   形成 2 像素的白色间隙，达到"环形选中"的视觉效果。
+             * 步骤二：在黑色圆之上覆盖颜色实心圆
+             *   drawEllipse(4, 4, 20, 20)：
+             *     在黑色圆的内部画一个更小的颜色圆，
+             *     距各边 4px，直径 20px。
+             *     这样黑色圆从边缘向内露出 2px 宽度的黑色环形，
+             *     形成均匀的选中高亮效果。
              */
-            // 黑色环（外圈轮廓）
-            p.setPen(QPen(QColor(0, 0, 0), 2));
-            p.setBrush(Qt::NoBrush);
-            p.drawEllipse(1, 1, 26, 26);
+            // 黑色实心底层（环形基础）
+            p.setPen(Qt::NoPen);
+            p.setBrush(QColor(0, 0, 0));
+            p.drawEllipse(2, 2, 24, 24);
 
-            // 内部色块
+            // 内部颜色圆（覆盖在黑色环之上）
             p.setBrush(colors[i].color);
             if (colors[i].color == QColor(255, 255, 255) || colors[i].color.lightness() > 240) {
                 p.setPen(QPen(QColor(180, 180, 180), 1));
             } else {
                 p.setPen(Qt::NoPen);
             }
-            p.drawEllipse(3, 3, 22, 22);
+            p.drawEllipse(4, 4, 20, 20);
         } else {
             /*
              * 未选中状态：简单绘制色块圆形。
@@ -722,9 +738,18 @@ void ColorPickerWidget::createPopupPanel()
          * "QPushButton:hover { border: 2px solid #888; }"
          *   鼠标悬停时显示灰色边框（淡入淡出效果需要 Qt 处理）。
          */
+        /*
+         * 设置按钮的样式表：
+         * "background: transparent"             —— 透明背景
+         * "border: none"                        —— 无边框（去掉默认的按钮边框和悬停灰色环形）
+         * "border-radius: 14px"                 —— 14px 圆角（28x28 按钮的一半，形成圆形）
+         *
+         * 注意：移除了 hover 灰色边框（border: 2px solid #888），
+         * 因为点击后按钮的 hover 状态残留会在图标外围显示灰色环形，
+         * 与面板刚打开时的样式不一致。选中状态已由图标内部的黑色环形清晰指示。
+         */
         btn->setStyleSheet(
-            "QPushButton { background: transparent; border: 2px solid transparent; border-radius: 14px; }"
-            "QPushButton:hover { border: 2px solid #888; }"
+            "QPushButton { background: transparent; border: none; border-radius: 14px; }"
         );
 
         /*
@@ -833,30 +858,83 @@ void ColorPickerWidget::onColorButtonClicked(int id)
         m_selectedName = colors[id].name;
 
         /*
-         * 不关闭弹窗面板，只发射颜色变更信号并刷新绘制。
-         *
-         * 原来的代码在这里调用了：
-         *   m_popupPanel->close();
-         *   m_popupPanel->deleteLater();
-         *   这些代码会关闭并销毁面板，用户每次只能选择一种颜色。
-         *
-         * 现在改为保留面板，让用户可以连续尝试不同的颜色，
-         * 直到点击面板外部区域时，由 Qt::Popup 机制自动关闭。
-         *
-         * emit colorSelected(m_selectedColor)：
+         * 发射颜色变更信号。
          * emit 是 Qt 的关键字（宏），用于发射信号。
          * 信号发射后，所有连接到这个信号的槽函数会被调用。
          * 连接方式是直接连接（DirectConnection）：槽函数在信号
          * 发射的线程中立即执行。
-         *
-         * update()：
-         * 请求 Qt 重新绘制当前控件。
-         * update() 不会立即重绘，而是向事件队列中插入一个
-         * QPaintEvent。Qt 会在下一轮事件循环中处理重绘。
-         * 这样可以将多个 update() 合并为一次重绘，提高性能。
          */
         emit colorSelected(m_selectedColor);
-        update();       // 触发 paintEvent 重绘三角箭头区域（当前无变化，但保持规范）
+
+        /*
+         * 刷新弹出面板中所有按钮的图标。
+         *
+         * 由于 m_selectedColor 已经更新，需要让每个按钮重新绘制图标，
+         * 使原先选中项的黑色环形消失，新选中项显示黑色环形。
+         *
+         * 实现方式：遍历按钮组中的所有按钮，根据每个按钮的 ID
+         * 判断是否被选中，重新生成对应的 QPixmap 图标并设置到按钮上。
+         * 这样不需要销毁和重建整个面板，避免了面板闪烁。
+         */
+        if (m_popupPanel) {
+            QList<QAbstractButton*> btns = m_buttonGroup->buttons();
+            for (int i = 0; i < btns.size(); ++i) {
+                QPushButton* btn = qobject_cast<QPushButton*>(btns[i]);
+                if (!btn) continue;
+                int btnId = m_buttonGroup->id(btn);  // 获取按钮 ID（0-4）
+
+                /*
+                 * 判断此按钮对应的颜色是否为当前选中颜色。
+                 * 如果匹配，绘制黑色环形选中态；
+                 * 否则绘制普通色块。
+                 */
+                const QColor& btnColor = colors[btnId].color;
+                bool isSelected = (btnColor == m_selectedColor);
+
+                /*
+                 * 重新生成 28x28 的按钮图标。
+                 * 绘制逻辑与 createPopupPanel() 中完全一致。
+                 */
+                QPixmap pix(28, 28);
+                pix.fill(Qt::transparent);
+                QPainter p(&pix);
+                p.setRenderHint(QPainter::Antialiasing);
+
+                if (isSelected) {
+                    // 选中态：黑色实心底层 + 内部颜色圆
+                    p.setPen(Qt::NoPen);
+                    p.setBrush(QColor(0, 0, 0));
+                    p.drawEllipse(2, 2, 24, 24);
+
+                    p.setBrush(btnColor);
+                    if (btnColor == QColor(255, 255, 255) || btnColor.lightness() > 240) {
+                        p.setPen(QPen(QColor(180, 180, 180), 1));
+                    } else {
+                        p.setPen(Qt::NoPen);
+                    }
+                    p.drawEllipse(4, 4, 20, 20);
+                } else {
+                    // 未选中态：纯色块
+                    p.setBrush(btnColor);
+                    if (btnColor == QColor(255, 255, 255) || btnColor.lightness() > 240) {
+                        p.setPen(QPen(QColor(180, 180, 180), 1));
+                    } else {
+                        p.setPen(Qt::NoPen);
+                    }
+                    p.drawEllipse(2, 2, 24, 24);
+                }
+                p.end();
+
+                btn->setIcon(QIcon(pix));
+                btn->setIconSize(QSize(24, 24));
+            }
+        }
+
+        /*
+         * update()：
+         * 请求 Qt 重新绘制当前控件（三角箭头区域）。
+         */
+        update();
     }
 }
 
@@ -1270,8 +1348,8 @@ void SettingsWidget::setupUI()
      */
     scrollArea->setStyleSheet(
         "QScrollArea { border: none; background: white; }"
-        "QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }"
-        "QScrollBar::handle:vertical { background: #ccc; border-radius: 4px; min-height: 30px; }"
+        "QScrollBar:vertical { width: 14px; background: #f0f0f0; border-radius: 7px; }"
+        "QScrollBar::handle:vertical { background: #ccc; border-radius: 7px; min-height: 30px; margin: 2px; }"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
     );
 
@@ -1390,11 +1468,14 @@ void SettingsWidget::setupUI()
     /*
      * 创建 "修改背景颜色" 标签。
      * 字体大小 13 点。
+     * 显式设置文本颜色为黑色（#333），防止在 Android 上因父级样式
+     * 继承导致文字颜色异常（显示为白色而不可见）。
      */
     colorSettingLabel = new QLabel(QString::fromUtf8("修改背景颜色"), contentWidget);
     QFont labelFont = colorSettingLabel->font();
     labelFont.setPointSize(13);
     colorSettingLabel->setFont(labelFont);
+    colorSettingLabel->setStyleSheet("color: #333; background: transparent;");
     colorLayout->addWidget(colorSettingLabel);
 
     /*
@@ -1410,6 +1491,46 @@ void SettingsWidget::setupUI()
     colorLayout->addWidget(colorPicker);
 
     mainLayout->addLayout(colorLayout);
+
+    // ===== 浅色分割线 =====
+
+    /*
+     * 在颜色设置行下方添加一条浅灰色分割线。
+     *
+     * QFrame 是 QWidget 的子类，用于显示各种框架效果。
+     * 设置 QFrame::HLine 使其显示为一条水平线。
+     *
+     * setFrameShape(QFrame::HLine)：
+     *   设置为水平线形状。QFrame 支持多种形状：
+     *   - QFrame::HLine  ：水平线
+     *   - QFrame::VLine  ：垂直线
+     *   - QFrame::Box    ：矩形框
+     *   - QFrame::Panel  ：面板
+     *   - QFrame::StyledPanel：带样式的面板
+     *
+     * setFrameShadow(QFrame::Sunken)：
+     *   设置为凹陷阴影效果（与 QFrame::HLine 组合时，
+     *   在大多数平台上显示为一条线）。
+     *
+     * 样式表设置颜色和边距：
+     *   "color: #e0e0e0;"    —— 浅灰色线条
+     *   "margin-left: 20px;" —— 左侧边距 20px，与颜色标签对齐
+     *   "margin-right: 20px;"—— 右侧边距 20px，保持对称
+     *   "max-height: 1px;"   —— 最大高度 1px，防止分割线过粗
+     *
+     * 这样设置后，当未来添加更多设置项时，每个设置项之间
+     * 都可以放置一条分割线，使页面布局更清晰工整。
+     */
+    QFrame* separatorLine = new QFrame(contentWidget);
+    separatorLine->setFrameShape(QFrame::HLine);
+    separatorLine->setFrameShadow(QFrame::Sunken);
+    separatorLine->setStyleSheet(
+        "color: #e0e0e0;"
+        "margin-left: 20px;"
+        "margin-right: 20px;"
+        "max-height: 1px;"
+    );
+    mainLayout->addWidget(separatorLine);
 
     /*
      * 添加弹性空间，将所有设置项推到顶部。

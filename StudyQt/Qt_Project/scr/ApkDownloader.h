@@ -11,7 +11,7 @@
  *   - QNetworkAccessManager : 网络请求管理器，负责建立 HTTP 连接
  *   - QNetworkReply         : 网络响应对象，接收下载数据流
  *   - QFile                 : 文件读写类，将下载数据写入本地存储
- *   - QProgressDialog       : 模态进度对话框，显示下载进度百分比
+ *   - StyledProgressDialog  : 自定义样式进度对话框，显示下载进度百分比
  *   - QJniObject            : Qt Android 扩展，用于通过 JNI 调用 Java API
  *
  * Android 特有知识点：
@@ -39,7 +39,7 @@
 #include <QNetworkAccessManager>  // 网络访问管理器：用于发起 HTTP/HTTPS 下载请求
 #include <QNetworkReply>          // 网络响应对象：持有服务器返回的数据和状态信息
 #include <QFile>                  // 文件操作类：用于将下载的数据写入本地磁盘文件
-#include <QProgressDialog>        // 进度对话框：模态弹窗，显示下载进度和取消按钮
+#include "StyledProgressDialog.h" // 统一风格的进度弹窗
 #include <QWidget>                // 窗口基类：用于获取父窗口指针，处理对话框的父级关系
 
 /**
@@ -261,7 +261,7 @@ private:
     QNetworkAccessManager* networkManager;  ///< 网络请求管理器 (QObject 子类，自动加入 Qt 对象树)
     QNetworkReply* currentReply;            ///< 当前正在进行的下载请求 (nullptr 时表示没有活跃下载)
     QFile* apkFile;                         ///< 本地 APK 文件对象 (数据写入目标)
-    QProgressDialog* progressDialog;        ///< 模态进度对话框 (显示下载进度条)
+    StyledProgressDialog* progressDialog;   ///< 统一风格的模态进度对话框 (显示下载进度条)
     QString apkFilePath;                    ///< APK 文件在设备上的完整路径 (如 "/data/data/com.example/cache/update.apk")
     QWidget* parentWidget;                  ///< 父窗口指针 (用于对话框居中、Activity 获取等)
 };

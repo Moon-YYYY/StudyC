@@ -96,120 +96,45 @@ ApkDownloader::ApkDownloader(QWidget *parent)
     , parentWidget(parent)                             // 保存父窗口指针，供后续创建对话框和使用
 {
     // ==============================================
-    // 创建进度对话框
+    // 创建统一风格进度对话框
     // ==============================================
 
     /**
-     * QProgressDialog 的构造函数有两个参数：
-     *   QProgressDialog(labelText, cancelButtonText, minimum, maximum, parent)
-     * 这里不传 labelText 等参数，后面用 setter 方法逐个设置，
-     * 只是为了代码可读性——每个设置都有注释说明。
+     * 创建 StyledProgressDialog 替代旧的 QProgressDialog。
+     * StyledProgressDialog 采用与 UpdateDialog 一致的视觉风格：
+     *   - 无边框圆角窗口
+     *   - 圆角白色背景 + 顶部渐变装饰条
+     *   - QProgressBar 进度条
+     *   - 取消按钮
+     *   - 窗口固定（不可拖动）
      */
-    progressDialog = new QProgressDialog(parentWidget);
-
-    // setWindowTitle() 设置对话框标题栏的文字
-    // 在 Android 上，由于窗口管理器不同，标题栏可能不显示
-    // 但设置总比不设置好，至少有备无患
-    progressDialog->setWindowTitle("下载更新");
+    progressDialog = new StyledProgressDialog(parentWidget);
 
     /**
-     * setLabelText() 设置对话框中央的提示文字
-     * 这个文字会在进度条上方显示
+     * setProgressText() 设置进度描述文字
      * 下载开始前显示"正在下载新版本..."，
      * 下载过程中会被 onDownloadProgress 更新为"已下载 5MB / 50MB"等
      */
-    progressDialog->setLabelText("正在下载新版本...");
+    progressDialog->setProgressText("正在下载新版本...");
 
     /**
-     * setCancelButtonText() 设置取消按钮的文字
-     * 如果不设置，默认文字取决于系统语言：
-     *   - 中文系统显示"取消"
-     *   - 英文系统显示"Cancel"
-     * 显式设为"取消"确保统一，不受系统语言影响
-     */
-    progressDialog->setCancelButtonText("取消");
-
-    /**
-     * setMinimum(0) 和 setMaximum(100) 一起设置进度范围
-     * QProgressDialog 的进度范围是 [minimum, maximum] 闭区间
-     *   - minimum = 0：进度从 0% 开始
-     *   - maximum = 100：进度到 100% 结束
-     * setValue(N) 时，百分比 = (N - min) / (max - min) × 100%
-     * 这里 min=0, max=100，所以 setValue(50) 就是 50%
-     *
-     * 也可以设为 min=0, max=文件总字节数，这样 setValue(bytesReceived) 直接显示实际进度
-     * 但用 0~100 更通用，不依赖文件大小
-     */
-    progressDialog->setMinimum(0);
-    progressDialog->setMaximum(100);
-
-    /**
-     * setValue(0) 设置进度条的初始位置
+     * setProgress(0) 设置进度条的初始位置
      * 为什么要设置为 0？
-     *   刚创建时，QProgressDialog 的默认值是 minimum（也是 0），
+     *   刚创建时，StyledProgressDialog 的默认值是 0，
      *   但显式写出来是为了强调：还没开始下载，进度为 0%
-     *   如果忘记了 setValue(0)，恰巧之前有其他地方用过这个对话框，
+     *   如果忘记了 setProgress(0)，恰巧之前有其他地方用过这个对话框，
      *   它的内部值可能还停留在上一次的数值（比如 100）
      *   这就导致了"一打开对话框就显示 100% 完成"的 BUG
      */
-    progressDialog->setValue(0);
-
-    /**
-     * setMinimumDuration(0) 设置对话框延迟显示的时间（毫秒）
-     * 关键知识点：
-     *   QProgressDialog 有一个"智能延迟"特性：
-     *     - 如果预计操作很快完成（< minimumDuration），对话框根本不会出现
-     *     - 避免眨眼即过让用户看一眼就关掉
-     *     - 默认值是 4000 毫秒（4 秒）
-     *   但我们这里是网络下载，不可能 4 秒内完成，
-     *   但为了"立即显示"的效果，设为 0 毫秒
-     *   setMinimumDuration(0) → 无论多快，对话框都会显示
-     */
-    progressDialog->setMinimumDuration(0);
-
-    /**
-     * setWindowModality() 设置窗口模态
-     * Qt::WindowModal：对话框阻止与本窗口（及其子窗口）的交互
-     * 但用户仍可以切换到其他应用程序
-     *
-     * 与之对比的选项：
-     *   Qt::NonModal       ：非模态，用户可以与主窗口交互（可能误操作）
-     *   Qt::ApplicationModal：应用级模态，阻止与所有窗口的交互（太粗暴）
-     *   Qt::WindowModal    ：窗口级模态，仅阻止与父窗口的交互（最常用）
-     *
-     * 下载过程中应该让用户不能操作主窗口，防止重复点击下载，
-     * 但又不应该阻止用户切换到浏览器做其他事。
-     * Qt::WindowModal 正好满足这个需求。
-     */
-    progressDialog->setWindowModality(Qt::WindowModal);
-
-    /**
-     * setAttribute(Qt::WA_DeleteOnClose) 设置属性
-     * Qt::WA_DeleteOnClose 是一个窗口属性（Widget Attribute）
-     * 行为：当对话框被关闭时（close() 或用户点 X），自动 delete 释放内存
-     * 为什么需要？
-     *   如果我们不设这个属性，对话框关闭后只是隐藏（hide()），
-     *   对象仍然占用内存。多次打开下载就会创建多个 QProgressDialog 对象。
-     *   设置这个属性后，每次下载完成后对话框自动销毁。
-     *
-     * 属性的工作原理：
-     *   setAttribute 是一个位掩码操作（Bitmask），
-     *   每个 Widget 内部有一个 QFlags 类型的整数，
-     *   每一位代表一个属性的开关状态。
-     *   例如：0b00000001 = WA_DeleteOnClose
-     *         0b00000010 = WA_TranslucentBackground
-     *   setAttribute 就是按位或（|=）将这个位设为 1
-     *   testAttribute 就是按位与（&=）检查这个位是否为 1
-     */
-    progressDialog->setAttribute(Qt::WA_DeleteOnClose);
+    progressDialog->setProgress(0);
 
     // ==============================================
     // 连接进度对话框的"取消"信号
     // ==============================================
 
     /**
-     * 连接 QProgressDialog::canceled 信号到 Lambda 表达式
-     * QProgressDialog 的"取消"按钮被点击时，自动发射 canceled() 信号（无参数）
+     * 连接 StyledProgressDialog::canceled 信号到 Lambda 表达式
+     * 当用户点击"取消"按钮时，StyledProgressDialog 发射 canceled() 信号
      *
      * Lambda 表达式 [this]() { ... } 详解：
      *   [this]   ：捕获列表（Capture List），捕获 this 指针供 Lambda 内部使用
@@ -229,7 +154,7 @@ ApkDownloader::ApkDownloader(QWidget *parent)
      *   对 nullptr 调用 abort() 会导致程序崩溃（Segmentation Fault）
      *   所以每次使用指针前必须判空
      */
-    connect(progressDialog, &QProgressDialog::canceled, this, [this]() {
+    connect(progressDialog, &StyledProgressDialog::canceled, this, [this]() {
         // 防止重复 abort：只有 currentReply 非空时才调用 abort
         if (currentReply)
             currentReply->abort();  // abort() 内部会断开连接并触发 finished 信号
@@ -420,28 +345,24 @@ void ApkDownloader::startDownload(const QString& url)
     // ==============================================
 
     /**
-     * setValue(0) 将进度条重置到 0% 位置
+     * setProgress(0) 将进度条重置到 0% 位置
      * 为什么这里还要再设一次 0？
-     *   构造函数中我们已经 setValue(0) 了，看起来似乎是重复的。
+     *   构造函数中我们已经 setProgress(0) 了，看起来似乎是重复的。
      *   但是考虑这个场景：
      *     用户第一次下载 → 下载到 50% → 取消
      *     用户再次下载 → 调用 startDownload()
      *   此时 progressDialog 内部的进度值还停留在 50%。
      *   如果不重置为 0，对话框一出现就显示 50%，这是不对的。
-     * 所以这里的 setValue(0) 是为了"重置"进度，不是多余的。
-     *
-     * 引申知识点：
-     *   在 Qt 中，setValue(N) 如果 N 等于当前值，不会发射 valueChanged 信号，
-     *   所以多次 setValue(0) 不会发多余信号，性能无影响。
+     * 所以这里的 setProgress(0) 是为了"重置"进度，不是多余的。
      */
-    progressDialog->setValue(0);
+    progressDialog->setProgress(0);
 
     /**
-     * setLabelText() 更新提示文字
+     * setProgressText() 更新提示文字
      * 这里设为"正在下载新版本..."，提示用户当前状态。
      * 下载过程中，onDownloadProgress 会更新这个文字为具体进度。
      */
-    progressDialog->setLabelText("正在下载新版本...");
+    progressDialog->setProgressText("正在下载新版本...");
 
     /**
      * show() 让对话框显示出来
@@ -452,15 +373,7 @@ void ApkDownloader::startDownload(const QString& url)
      *   所以只在真正开始下载时才显示。
      *
      * show() 与 setVisible(true) 等效。
-     * 对于非模态对话框，show() 立刻返回，不阻塞。
-     * 对于模态对话框（我们设了 WindowModal），
-     * show() 后需要调用 exec() 才会阻塞，但我们没有调 exec()，
-     * 所以这个对话框是非阻塞的——用户可以边下载边做其他事（除了操作主窗口）。
-     *
-     * 知识点补充：QDialog::exec() vs QDialog::show()
-     *   exec()：模态阻塞，类似 QQ 登录后的"正在登录..."弹窗
-     *   show()：非模态，类似 Chrome 下载文件时底部出现的进度条
-     * 我们这里用 show() 而不是 exec()，因为下载不应该阻止用户操作。
+     * 对于模态对话框，show() 后不会阻塞，用户可以边下载边做其他事。
      */
     progressDialog->show();
 
@@ -511,7 +424,7 @@ void ApkDownloader::startDownload(const QString& url)
      * Accept 头告诉服务器我们期望接收的响应格式
      * application/vnd.android.package-archive：APK 标准的 MIME 类型
      * application/octet-stream：通用二进制流，服务器不确定格式时常用
-     * */*：兜底，任何格式都可以
+     * ：兜底，任何格式都可以
      * 按优先级从高到低排列，逗号分隔
      */
     request.setRawHeader("Accept",
@@ -716,7 +629,7 @@ void ApkDownloader::onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
         int percent = static_cast<int>((bytesReceived * 100) / bytesTotal);
 
         // 更新进度条的当前值，触发界面重绘
-        progressDialog->setValue(percent);
+        progressDialog->setProgress(percent);
 
         /**
          * QString("已下载 %1 / %2") 是一个模板字符串
@@ -733,8 +646,8 @@ void ApkDownloader::onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
             .arg(formatFileSize(bytesReceived))  // 替换 %1：已下载大小
             .arg(formatFileSize(bytesTotal));     // 替换 %2：总大小
 
-        // setLabelText 更新对话框中的文字
-        progressDialog->setLabelText(text);
+        // setProgressText 更新对话框中的文字
+        progressDialog->setProgressText(text);
     } else {
         /**
          * bytesTotal = -1（服务器没有返回 Content-Length）的情况
@@ -742,7 +655,7 @@ void ApkDownloader::onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
          * QProgressDialog 在这种情况下会自动进入"忙碌模式"（忙动动画）
          * 我们只显示已下载的数据量
          */
-        progressDialog->setLabelText(
+        progressDialog->setProgressText(
             QString("已下载 %1").arg(formatFileSize(bytesReceived)));
     }
 }

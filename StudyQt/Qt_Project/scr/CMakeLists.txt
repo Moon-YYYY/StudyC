@@ -27,6 +27,10 @@ qt_add_executable(CalculationTools
     ApkDownloader.cpp
     SettingsWidget.h
     SettingsWidget.cpp
+    StyledDialog.h
+    StyledDialog.cpp
+    StyledProgressDialog.h
+    StyledProgressDialog.cpp
 )
 
 set_target_properties(CalculationTools PROPERTIES

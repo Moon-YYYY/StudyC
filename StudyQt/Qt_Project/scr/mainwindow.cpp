@@ -26,6 +26,9 @@
  * 这里包含了 mainwindow.h，它会间接包含所有需要的自定义控件的头文件。
  */
 #include "mainwindow.h"
+#ifdef Q_OS_ANDROID
+#include "ApkDownloader.h"
+#endif
 
 /*
  * 包含 ui_mainwindow.h —— 由 uic（UI Compiler）编译器自动生成。
@@ -43,6 +46,7 @@
 #include "CalculatorWindow.h"   // 计算器显示窗口
 #include "UpdateChecker.h"      // 更新检查器（包含 UpdateInfo 结构体定义）
 #include "UpdateDialog.h"       // 更新提示弹窗
+#include "StyledDialog.h"       // 统一风格弹窗
 #include "SettingsWidget.h"     // 设置页面
 
 /*
@@ -64,11 +68,13 @@
 #include <QRect>
 #include <QApplication>
 #include <QPushButton>
-#include <QMessageBox>
 #include <QStackedWidget>
 #include <QPalette>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QDesktopServices>
+#include <QMessageBox>
+#include <QUrl>
 
 /*
  * ========================================================================
@@ -90,8 +96,9 @@
  *   - 如果 server.versionCode > APP_VERSION_CODE，说明有新版本
  *   - 如果 server.versionCode <= APP_VERSION_CODE，说明已是最新
  */
-#define APP_VERSION "1.5.0"
-#define APP_VERSION_CODE 17
+#define APP_VERSION "1.5.4"
+#define APP_VERSION_CODE 21
+#define APP_UPDATE_LOG "修复已知问题，优化细节体验"
 
 ////////test注释用来测试，可忽略/////
 /*
@@ -461,6 +468,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(updateChecker, &UpdateChecker::newVersionAvailable, this, [this](const UpdateInfo& info) {
         UpdateDialog* dialog = new UpdateDialog(info, this);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
+
+        // 连接"立即更新"按钮：当用户点击时开始下载 APK
+        connect(dialog, &UpdateDialog::downloadRequested, this, [this](const QString& url) {
+#ifdef Q_OS_ANDROID
+            ApkDownloader* downloader = new ApkDownloader(this);
+            connect(downloader, &ApkDownloader::downloadFailed, this, [this](const QString& error) {
+                QMessageBox::warning(qobject_cast<QWidget*>(this), "下载失败", error);
+            });
+            downloader->startDownload(url);
+#else
+            // Windows 等其他平台：在浏览器中打开下载链接
+            QDesktopServices::openUrl(QUrl(url));
+#endif
+        });
+
         dialog->exec();
     });
 
@@ -487,7 +509,9 @@ MainWindow::MainWindow(QWidget *parent)
      */
     connect(updateChecker, &UpdateChecker::alreadyLatest, this, [this]() {
         if (!m_isAutoCheckup) {
-            QMessageBox::information(nullptr, "检查更新", "当前已是最新版本！");
+            StyledDialog* dlg = new StyledDialog("检查更新", "当前已是最新版本！", qobject_cast<QWidget*>(this));
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            dlg->exec();
         }
     });
 
@@ -514,7 +538,9 @@ MainWindow::MainWindow(QWidget *parent)
      */
     connect(updateChecker, &UpdateChecker::checkFailed, this, [this](const QString& error) {
         if (!m_isAutoCheckup) {
-            QMessageBox::warning(nullptr, "检查更新", "检查失败：" + error);
+            StyledDialog* dlg = new StyledDialog("检查更新", "检查失败：" + error, qobject_cast<QWidget*>(this));
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            dlg->exec();
         }
     });
 
@@ -581,7 +607,9 @@ MainWindow::MainWindow(QWidget *parent)
          *   "版本：" APP_VERSION 等同于 "版本：1.5.0"
          */
         if (index == 0) {
-            QMessageBox::about(this, "关于", "CalculationTools\n版本：" APP_VERSION "\n\n一个简单又不简单的的计算工具应用。");
+            StyledDialog* dlg = new StyledDialog("关于", "CalculationTools\n版本：" APP_VERSION "\n\n一个简单又不简单的的计算工具应用。", this);
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            dlg->exec();
         }
 
         /*
@@ -726,7 +754,9 @@ MainWindow::MainWindow(QWidget *parent)
          * 宏 APP_VERSION 在编译时会被替换为实际的版本字符串。
          */
         else if (index == 3) {
-            QMessageBox::information(this, "版本", "当前版本：" APP_VERSION);
+            StyledDialog* dlg = new StyledDialog("版本", "当前版本：" APP_VERSION, this);
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            dlg->exec();
         }
 
         /*
@@ -739,7 +769,9 @@ MainWindow::MainWindow(QWidget *parent)
          * 目前显示的是上一版本的更新内容。
          */
         else if(index == 4){
-            QMessageBox::information(this, "更新内容", "新增背景颜色的选择设置");
+            StyledDialog* dlg = new StyledDialog("更新内容", APP_UPDATE_LOG, this);
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            dlg->exec();
         }
     });
 }

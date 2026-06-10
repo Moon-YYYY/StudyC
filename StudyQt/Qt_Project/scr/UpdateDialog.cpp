@@ -9,6 +9,7 @@
 #include "UpdateDialog.h"    // 更新对话框头文件：声明 UpdateDialog 类
 #include "UpdateChecker.h"   // 更新检查器头文件：包含 UpdateInfo 结构体的完整定义
 #include <QPainter>          // 绘制器，用于自定义绘制窗口背景
+#include <QScrollArea>       // 滚动区域，用于显示超长更新日志
 #include <QMessageBox>       // 消息框，用于显示下载错误
 
 // =============================================================================
@@ -129,7 +130,7 @@ void UpdateDialog::setupUI()
     mainLayout->addWidget(m_versionLabel);
 
     // =========================================================================
-    // 更新日志标签：显示服务器返回的 changelog
+    // 更新日志区域：放入 QScrollArea 支持上下滑动
     // =========================================================================
 
     /**
@@ -140,6 +141,7 @@ void UpdateDialog::setupUI()
                         ? "暂无更新说明"
                         : m_info.changelog;
 
+    // ---- 先创建 QLabel 用于显示日志文字 ----
     m_changelogLabel = new QLabel(changelog, this);
 
     /**
@@ -151,26 +153,41 @@ void UpdateDialog::setupUI()
 
     // 左对齐，顶部对齐
     m_changelogLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    m_changelogLabel->setMinimumHeight(60);
 
     /**
      * 设置样式表（QSS）：
      * 类似 CSS，用于设置控件外观。
-     *
-     * color: #555          - 文字颜色
-     * font-size: 13px      - 字号
-     * background: #f5f5f5  - 背景色（浅灰）
-     * border-radius: 8px   - 圆角半径
-     * padding: 12px        - 内边距
      */
     m_changelogLabel->setStyleSheet(
         "color: #555; font-size: 13px;"
-        "background: #f5f5f5; border-radius: 8px; padding: 12px;"
+        "background: transparent; padding: 8px;"
     );
 
-    // 设置最小高度，确保即使文字很少也有足够显示区域
-    m_changelogLabel->setMinimumHeight(80);
+    // ---- 将 QLabel 放入 QScrollArea ----
+    QScrollArea* changelogScroll = new QScrollArea(this);
+    changelogScroll->setWidgetResizable(true);
+    changelogScroll->setWidget(m_changelogLabel);
+    changelogScroll->setMinimumHeight(80);
+    changelogScroll->setStyleSheet(
+        "QScrollArea {"
+        "  background: #f5f5f5; border: none; border-radius: 8px;"
+        "}"
+        /* 手机端友好：滚动条加粗到 14px */
+        "QScrollBar:vertical {"
+        "  width: 14px; background: transparent;"
+        "  border-radius: 7px;"
+        "}"
+        "QScrollBar::handle:vertical {"
+        "  background: #ccc; border-radius: 7px; min-height: 30px;"
+        "  margin: 2px;"
+        "}"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+        "  height: 0;"
+        "}"
+    );
 
-    mainLayout->addWidget(m_changelogLabel);
+    mainLayout->addWidget(changelogScroll);
 
     // =========================================================================
     // 添加弹性空间：将下面的按钮推到底部
@@ -353,13 +370,12 @@ void UpdateDialog::paintEvent(QPaintEvent* event)
 void UpdateDialog::mousePressEvent(QMouseEvent *event)
 {
     /**
-     * 当鼠标左键按下时，记录按下位置。
-     *
-     * event->globalPosition() 返回鼠标在屏幕上的全局坐标（QPointF）。
-     * 注意：Qt6 中 globalPos() 已弃用，改用 globalPosition()。
+     * 当左键按下时，记录当前鼠标的全局位置和窗口的当前位置。
+     * 使用 dragDelta 方式（记录偏移差）代替 frameGeometry() 计算，
+     * 避免在 Android / 无边框窗口上 frameGeometry() 返回不正确导致的拖拽乱跳。
      */
     if (event->button() == Qt::LeftButton) {
-        m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+        m_dragPosition = event->globalPosition().toPoint();  // 仅存鼠标全局位置
         event->accept();
     }
 }
@@ -367,16 +383,20 @@ void UpdateDialog::mousePressEvent(QMouseEvent *event)
 void UpdateDialog::mouseMoveEvent(QMouseEvent *event)
 {
     /**
-     * 鼠标移动时，将窗口移动到新位置。
+     * 鼠标移动时，通过计算两次坐标的差值（delta）来移动窗口。
      *
      * 计算方式：
-     *   新位置 = 鼠标当前全局位置 - 按下时记录的偏移量
-     *   这样窗口会跟随鼠标平滑移动。
+     *   1. 计算 delta = 当前鼠标全局位置 - 按下时记录的鼠标全局位置
+     *   2. 新位置 = 窗口当前位置 + delta
+     *   3. 更新记录的鼠标位置为当前鼠标位置（以便下次计算正确的 delta）
      *
-     * move() 方法设置窗口的屏幕坐标位置。
+     * 这种方式不依赖 frameGeometry()，对 Android 触摸拖拽更稳定。
      */
     if (event->buttons() & Qt::LeftButton) {
-        move(event->globalPosition().toPoint() - m_dragPosition);
+        QPoint currentGlobal = event->globalPosition().toPoint();
+        QPoint delta = currentGlobal - m_dragPosition;
+        move(pos() + delta);
+        m_dragPosition = currentGlobal;  // 更新记录位置
         event->accept();
     }
 }
